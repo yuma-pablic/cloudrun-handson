@@ -8,7 +8,7 @@ spec:
       annotations:
         run.googleapis.com/execution-environment: gen2
         # TODO: change for your own vpc name
-        run.googleapis.com/network-interfaces: '[{"network":"cnsrun-app", "subnetwork":"cnsrun-cloudrun-hands-on-473403"}]'
+        run.googleapis.com/network-interfaces: '[{"network":"cnsrun-app", "subnetwork":"cnsrun-PROJECT_ID"}]'
         run.googleapis.com/vpc-access-egress: all-traffic
     spec:
       taskCount: 1
@@ -37,4 +37,4 @@ spec:
                 value: "cnsrun"
           maxRetries: 3
           timeoutSeconds: '600'
-          serviceAccountName: cnsrun-app-batch@cloudrun-hands-on-473403.iam.gserviceaccount.com
+          serviceAccountName: cnsrun-app-batch@PROJECT_ID.iam.gserviceaccount.com
