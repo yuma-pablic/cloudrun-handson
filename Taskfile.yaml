@@ -7,9 +7,11 @@ dotenv: [".env"]
 tasks:
   setup:
     desc: Setup environment variables in shell config
-    cmds:
+    cmds: 
       - echo 'export GOOGLE_CLOUD_PROJECT={{.GOOGLE_CLOUD_PROJECT}}' >> ~/.zshrc
       - echo "Added GOOGLE_CLOUD_PROJECT to ~/.zshrc. Run 'source ~/.zshrc' or restart your terminal to apply."
+      - gcloud auth application-default login
+      - gcloud config set project {{.GOOGLE_CLOUD_PROJECT}}
 
   fmt:
     desc: Format terraform files
