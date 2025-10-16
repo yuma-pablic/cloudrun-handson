@@ -42,3 +42,21 @@ tasks:
       - task: build-push-frontend
       - task: build-push-backend
       - task: build-push-batch
+
+  deploy-backend:
+    desc: Apply Cloud Deploy pipeline for backend
+    cmds:
+      - sed -e "s/PROJECT_ID/${GOOGLE_CLOUD_PROJECT}/g" doc/clouddeploy.yml | sed -e "s/REGION/asia-northeast1/g" | sed -e "s/SERVICE_NAME/cnsrun-backend/g" > /tmp/clouddeploy_backend.yml
+      - gcloud deploy apply --file=/tmp/clouddeploy_backend.yml --region asia-northeast1
+
+  deploy-frontend:
+    desc: Apply Cloud Deploy pipeline for frontend
+    cmds:
+      - sed -e "s/PROJECT_ID/${GOOGLE_CLOUD_PROJECT}/g" doc/clouddeploy.yml | sed -e "s/REGION/asia-northeast1/g" | sed -e "s/SERVICE_NAME/cnsrun-frontend/g" > /tmp/clouddeploy_frontend.yml
+      - gcloud deploy apply --file=/tmp/clouddeploy_frontend.yml --region asia-northeast1
+
+  deploy-all:
+    desc: Apply Cloud Deploy pipelines for all services
+    cmds:
+      - task: deploy-backend
+      - task: deploy-frontend
