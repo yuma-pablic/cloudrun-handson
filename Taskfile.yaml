@@ -1,0 +1,42 @@
+version: "3"
+
+silent: true
+
+dotenv: [".env"]
+
+tasks:
+  setup:
+    desc: Setup environment variables in shell config
+    cmds:
+      - echo 'export GOOGLE_CLOUD_PROJECT={{.GOOGLE_CLOUD_PROJECT}}' >> ~/.zshrc
+      - echo "Added GOOGLE_CLOUD_PROJECT to ~/.zshrc. Run 'source ~/.zshrc' or restart your terminal to apply."
+
+  fmt:
+    desc: Format terraform files
+    cmds:
+      - terraform fmt -recursive
+
+  build-push-frontend:
+    desc: Build and push frontend container image
+    cmds:
+      - cd app/frontend && docker build -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1
+
+  build-push-backend:
+    desc: Build and push backend container image
+    cmds:
+      - cd app/backend && docker build -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1
+
+  build-push-batch:
+    desc: Build and push batch container image
+    cmds:
+      - cd app/batch && docker build -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1
+
+  build-push-all:
+    desc: Build and push all container images
+    cmds:
+      - task: build-push-frontend
+      - task: build-push-backend
+      - task: build-push-batch

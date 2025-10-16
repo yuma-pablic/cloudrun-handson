@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: cnsrun-frontend
   annotations:
-    run.googleapis.com/ingress: internal
+    run.googleapis.com/ingress: all
 #    run.googleapis.com/ingress: internal-and-cloud-load-balancing
 #    run.googleapis.com/binary-authorization: default
 spec:
@@ -32,8 +32,9 @@ spec:
             cpu: 1000m
             memory: 512Mi
         startupProbe:
-          timeoutSeconds: 240
-          periodSeconds: 240
-          failureThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 5
+          failureThreshold: 3
           tcpSocket:
             port: 8080
+
