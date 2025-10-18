@@ -21,20 +21,20 @@ tasks:
   build-push-frontend:
     desc: Build and push frontend container image
     cmds:
-      - cd app/frontend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/frontend:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/frontend:v1
+      - cd app/frontend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1
 
   build-push-backend:
     desc: Build and push backend container image
     cmds:
-      - cd app/backend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/backend:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/backend:v1
+      - cd app/backend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1
 
   build-push-batch:
     desc: Build and push batch container image
     cmds:
-      - cd app/batch && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/batch:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/batch:v1
+      - cd app/batch && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1
 
   build-push-all:
     desc: Build and push all container images
@@ -60,3 +60,81 @@ tasks:
     cmds:
       - task: deploy-backend
       - task: deploy-frontend
+
+  run-deploy-frontend:
+    desc: Deploy frontend to Cloud Run
+    cmds:
+      - gcloud run deploy cnsrun-frontend --image=asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1 --allow-unauthenticated --service-account=cnsrun-app-frontend --region=asia-northeast1
+
+  run-deploy-backend:
+    desc: Deploy backend to Cloud Run
+    cmds:
+      - gcloud run deploy cnsrun-backend --image=asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1 --service-account=cnsrun-app-backend --region=asia-northeast1
+
+  run-deploy-batch:
+    desc: Deploy batch to Cloud Run Jobs
+    cmds:
+      - gcloud run jobs deploy cnsrun-batch --image=asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1 --service-account=cnsrun-app-batch --region=asia-northeast1
+
+  run-deploy-all:
+    desc: Deploy all services to Cloud Run
+    cmds:
+      - task: run-deploy-frontend
+      - task: run-deploy-backend
+      - task: run-deploy-batch
+
+  run-delete-frontend:
+    desc: Delete frontend service from Cloud Run
+    cmds:
+      - gcloud run services delete cnsrun-frontend --region=asia-northeast1 --quiet
+
+  run-delete-backend:
+    desc: Delete backend service from Cloud Run
+    cmds:
+      - gcloud run services delete cnsrun-backend --region=asia-northeast1 --quiet
+
+  run-delete-batch:
+    desc: Delete batch job from Cloud Run
+    cmds:
+      - gcloud run jobs delete cnsrun-batch --region=asia-northeast1 --quiet
+
+  run-delete-all:
+    desc: Delete all services and jobs from Cloud Run
+    cmds:
+      - task: run-delete-frontend
+      - task: run-delete-backend
+      - task: run-delete-batch
+
+  create-trigger-backend:
+    desc: Create Cloud Build trigger for backend
+    cmds:
+      - |
+        gcloud beta builds triggers create github \
+        --name=cnsrun-backend-trigger \
+        --region=asia-northeast1 \
+        --repository="projects/cloudrun-hands-on-473403/locations/asia-northeast1/connections/dev-cloudrun-handson-infra/repositories/dev-cnsrun-app" \
+        --branch-pattern=^main$ \
+        --build-config=app/backend/cloudbuild_push.yaml \
+        --included-files=app/backend/** \
+        --substitutions=_DEPLOY_ENV=main \
+        --service-account=projects/${GOOGLE_CLOUD_PROJECT}/serviceAccounts/cnsrun-cloudbuild@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com
+
+  create-trigger-frontend:
+    desc: Create Cloud Build trigger for frontend
+    cmds:
+      - |
+        gcloud beta builds triggers create github \
+        --name=cnsrun-frontend-trigger \
+        --region=asia-northeast1 \
+        --repository="projects/cloudrun-hands-on-473403/locations/asia-northeast1/connections/dev-cloudrun-handson-infra/repositories/dev-cnsrun-app" \
+        --branch-pattern=^main$ \
+        --build-config=app/frontend/cloudbuild_push.yaml \
+        --included-files=app/frontend/** \
+        --substitutions=_DEPLOY_ENV=main \
+        --service-account=projects/${GOOGLE_CLOUD_PROJECT}/serviceAccounts/cnsrun-cloudbuild@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com
+
+  create-trigger-all:
+    desc: Create Cloud Build triggers for all services
+    cmds:
+      - task: create-trigger-backend
+      - task: create-trigger-frontend
