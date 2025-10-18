@@ -21,20 +21,20 @@ tasks:
   build-push-frontend:
     desc: Build and push frontend container image
     cmds:
-      - cd app/frontend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/frontend:v1
+      - cd app/frontend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/frontend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/frontend:v1
 
   build-push-backend:
     desc: Build and push backend container image
     cmds:
-      - cd app/backend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/backend:v1
+      - cd app/backend && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/backend:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/backend:v1
 
   build-push-batch:
     desc: Build and push batch container image
     cmds:
-      - cd app/batch && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1 .
-      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/cnsrun-app/batch:v1
+      - cd app/batch && docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/batch:v1 .
+      - docker push asia-northeast1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/dev-cnsrun-app/batch:v1
 
   build-push-all:
     desc: Build and push all container images
