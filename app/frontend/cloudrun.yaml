@@ -12,9 +12,8 @@ spec:
       annotations:
         autoscaling.knative.dev/maxScale: '2'
         run.googleapis.com/execution-environment: gen2
-#         TODO: change for your own vpc name
-#        run.googleapis.com/network-interfaces: '[{"network":"cnsrun-app", "subnetwork":"cnsrun-cloudrun-hands-on-473403"}]'
-#        run.googleapis.com/vpc-access-egress: all-traffic
+        run.googleapis.com/network-interfaces: '[{"network":"cnsrun-app", "subnetwork":"cnsrun-cloudrun-hands-on-473403"}]'
+        run.googleapis.com/vpc-access-egress: all-traffic
     spec:
       containerConcurrency: 10
       timeoutSeconds: 300
@@ -23,7 +22,7 @@ spec:
       - image: frontend
         env:
           - name: BACKEND_FQDN
-            value: "https://cnsrun-backend-noejq743xa-an.a.run.app" # FIXME: Change BACKEND_FQDN value after backend resources is created
+            value: "https://cnsrun-backend-412410043737.asia-northeast1.run.app" # FIXME: Change BACKEND_FQDN value after backend resources is created
         ports:
         - name: http1
           containerPort: 8080
@@ -32,8 +31,8 @@ spec:
             cpu: 1000m
             memory: 512Mi
         startupProbe:
-          timeoutSeconds: 10
-          periodSeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 10
           failureThreshold: 3
           tcpSocket:
             port: 8080
