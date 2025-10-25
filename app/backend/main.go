@@ -93,7 +93,7 @@ func main() {
 
 func dbConnect() *sql.DB {
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tokyo connect_timeout=10",
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=Asia/Tokyo connect_timeout=10",
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
