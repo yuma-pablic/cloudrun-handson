@@ -42,15 +42,28 @@ func main() {
 		id := r.FormValue("id")
 		msg := "no message"
 
+		if db == nil {
+			body := Response{http.StatusServiceUnavailable, "Database connection not available"}
+			res, _ := json.Marshal(body)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write(res)
+			return
+		}
+
 		if id != "" {
 			fmt.Println("id:", id)
 			n, err := getNotification(db, id)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("Error getting notification: %v", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 			byteMsg, err := json.Marshal(n)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("Error marshaling notification: %v", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 			msg = string(byteMsg)
 		}
@@ -80,7 +93,7 @@ func main() {
 
 func dbConnect() *sql.DB {
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tokyo",
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tokyo connect_timeout=10",
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -90,12 +103,14 @@ func dbConnect() *sql.DB {
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatal("failed to init database: ", err)
+		log.Printf("WARNING: failed to init database: %v", err)
+		return nil
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatal("failed to connect database: ", err)
+		log.Printf("WARNING: failed to connect database: %v", err)
+		return nil
 	}
 
 	log.Default().Println("success to connect db!!")
