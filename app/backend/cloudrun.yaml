@@ -24,6 +24,8 @@ spec:
         - name: http1
           containerPort: 8081
         env:
+        - name: PORT
+          value: "8081"
         - name: DB_USER
           value: "app"
         - name: DB_PASSWORD
@@ -45,5 +47,5 @@ spec:
           timeoutSeconds: 240
           periodSeconds: 240
           failureThreshold: 1
-          tcpSocket:
-            port: 8081
+          httpGet:
+            path: /healthcheck

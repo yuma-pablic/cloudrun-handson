@@ -70,7 +70,12 @@ func main() {
 		fmt.Fprintf(w, "healthcheck OK")
 	})
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+	log.Printf("Starting server on port %s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 func dbConnect() *sql.DB {
