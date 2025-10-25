@@ -24,8 +24,6 @@ spec:
         - name: http1
           containerPort: 8081
         env:
-        - name: PORT
-          value: "8081"
         - name: DB_USER
           value: "app"
         - name: DB_PASSWORD
