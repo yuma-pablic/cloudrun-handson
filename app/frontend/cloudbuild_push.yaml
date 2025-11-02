@@ -15,29 +15,29 @@ steps:
         cd app/${_SERVICE_NAME}/
         skaffold build --file-output=artifacts.json --filename=skaffold.yaml
 
-#  # Chap6ハンズオンのみ使用。Binary Authorizationの証明書を作成するステップ
-#  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
-#    id: create-attestation
-#    waitFor:
-#      - build
-#    entrypoint: "bash"
-#    args:
-#      - "-c"
-#      - |-
-#        apt-get update && apt-get install -y jq
-#        cd app/${_SERVICE_NAME}/
-#        _IMAGE_DIGEST=$(cat artifacts.json | jq -r .builds[0].tag | cut -f 2 -d "@")
-#        echo "IMAGE_DIGEST: $$_IMAGE_DIGEST"
-#        gcloud beta container binauthz attestations sign-and-create \
-#          --project=$PROJECT_ID \
-#          --artifact-url=$${SKAFFOLD_DEFAULT_REPO}/frontend@$${_IMAGE_DIGEST} \
-#          --attestor=cnsrun-attestor \
-#          --attestor-project=$PROJECT_ID \
-#          --keyversion-project=$PROJECT_ID \
-#          --keyversion-location=$_REGION \
-#          --keyversion-keyring=cnsrun-keyring \
-#          --keyversion-key=cnsrun-attestor-key \
-#          --keyversion=1
+ # Chap6ハンズオンのみ使用。Binary Authorizationの証明書を作成するステップ
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    id: create-attestation
+    waitFor:
+      - build
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |-
+        apt-get update && apt-get install -y jq
+        cd app/${_SERVICE_NAME}/
+        _IMAGE_DIGEST=$(cat artifacts.json | jq -r .builds[0].tag | cut -f 2 -d "@")
+        echo "IMAGE_DIGEST: $$_IMAGE_DIGEST"
+        gcloud beta container binauthz attestations sign-and-create \
+          --project=$PROJECT_ID \
+          --artifact-url=$${SKAFFOLD_DEFAULT_REPO}/frontend@$${_IMAGE_DIGEST} \
+          --attestor=cnsrun-attestor \
+          --attestor-project=$PROJECT_ID \
+          --keyversion-project=$PROJECT_ID \
+          --keyversion-location=$_REGION \
+          --keyversion-keyring=cnsrun-keyring \
+          --keyversion-key=cnsrun-attestor-key \
+          --keyversion=1
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     id: deploy
