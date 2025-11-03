@@ -32,7 +32,7 @@ spec:
               key: 1
               name: cnsrun-app-db-password
         - name: DB_HOST
-          value: "10.0.200.5"  # FIXME: Change DB_HOST value to actual private IP address after Cloud SQL created
+          value: "10.0.200.9"  # FIXME: Change DB_HOST value to actual private IP address after Cloud SQL created
         - name: DB_PORT
           value: "5432"
         - name: DB_NAME
