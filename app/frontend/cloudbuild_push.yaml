@@ -16,42 +16,42 @@ steps:
         skaffold build --file-output=artifacts.json --filename=skaffold.yaml
 
  # Chap6ハンズオンのみ使用。Binary Authorizationの証明書を作成するステップ
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
-    id: create-attestation
-    waitFor:
-      - build
-    entrypoint: "bash"
-    args:
-      - "-c"
-      - |-
-        apt-get update && apt-get install -y jq
-        cd app/${_SERVICE_NAME}/
-        _IMAGE_DIGEST=$(cat artifacts.json | jq -r .builds[0].tag | cut -f 2 -d "@")
-        echo "IMAGE_DIGEST: $$_IMAGE_DIGEST"
-
-        ARTIFACT_URL="$${SKAFFOLD_DEFAULT_REPO}/frontend@$${_IMAGE_DIGEST}"
-
-        # 既存のattestationをチェック
-        if gcloud beta container binauthz attestations list \
-          --project=$PROJECT_ID \
-          --attestor=cnsrun-attestor \
-          --attestor-project=$PROJECT_ID \
-          --artifact-url="$$ARTIFACT_URL" 2>/dev/null | grep -q "$$_IMAGE_DIGEST"; then
-          echo "Attestationが既に存在します。スキップします。"
-        else
-          echo "Attestationを作成します"
-          gcloud beta container binauthz attestations sign-and-create \
-            --project=$PROJECT_ID \
-            --artifact-url="$$ARTIFACT_URL" \
-            --attestor=cnsrun-attestor \
-            --attestor-project=$PROJECT_ID \
-            --keyversion-project=$PROJECT_ID \
-            --keyversion-location=$_REGION \
-            --keyversion-keyring=cnsrun-keyring \
-            --keyversion-key=cnsrun-attestor-key \
-            --keyversion=1
-        fi
-
+  # - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  #   id: create-attestation
+  #   waitFor:
+  #     - build
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |-
+  #       apt-get update && apt-get install -y jq
+  #       cd app/${_SERVICE_NAME}/
+  #       _IMAGE_DIGEST=$(cat artifacts.json | jq -r .builds[0].tag | cut -f 2 -d "@")
+  #       echo "IMAGE_DIGEST: $$_IMAGE_DIGEST"
+  #
+  #       ARTIFACT_URL="$${SKAFFOLD_DEFAULT_REPO}/frontend@$${_IMAGE_DIGEST}"
+  #
+  #       # 既存のattestationをチェック
+  #       if gcloud beta container binauthz attestations list \
+  #         --project=$PROJECT_ID \
+  #         --attestor=cnsrun-attestor \
+  #         --attestor-project=$PROJECT_ID \
+  #         --artifact-url="$$ARTIFACT_URL" 2>/dev/null | grep -q "$$_IMAGE_DIGEST"; then
+  #         echo "Attestationが既に存在します。スキップします。"
+  #       else
+  #         echo "Attestationを作成します"
+  #         gcloud beta container binauthz attestations sign-and-create \
+  #           --project=$PROJECT_ID \
+  #           --artifact-url="$$ARTIFACT_URL" \
+  #           --attestor=cnsrun-attestor \
+  #           --attestor-project=$PROJECT_ID \
+  #           --keyversion-project=$PROJECT_ID \
+  #           --keyversion-location=$_REGION \
+  #           --keyversion-keyring=cnsrun-keyring \
+  #           --keyversion-key=cnsrun-attestor-key \
+  #           --keyversion=1
+  #       fi
+  #
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     id: deploy
     waitFor:
