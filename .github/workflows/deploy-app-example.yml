@@ -1,0 +1,61 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build and Deploy Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/cloudrun-hands-on-473403/locations/global/workloadIdentityPools/github/providers/github'
+          service_account: 'github-deploy@cloudrun-hands-on-473403.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          # 例: フロントエンドのビルド
+          docker build -t asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }} ./app/frontend
+          docker push asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+
+      - name: Trigger Cloud Build
+        run: |
+          gcloud builds submit --config=cloudbuild.yaml
+
+      - name: Create Cloud Deploy Release
+        run: |
+          gcloud deploy releases create release-${{ github.sha }} \
+            --delivery-pipeline=frontend-pipeline \
+            --region=asia-northeast1 \
+            --images=frontend=asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+
+      - name: Display Deployment Summary
+        run: |
+          echo "Application deployed successfully!"
+          echo "  ✓ Image built and pushed to Artifact Registry"
+          echo "  ✓ Cloud Deploy release created"
+          echo "  ✓ Service account: github-deploy"
