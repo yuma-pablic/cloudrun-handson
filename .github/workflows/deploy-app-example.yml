@@ -42,6 +42,10 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Install gcloud beta components
+        run: |
+          gcloud components install beta --quiet
+
       - name: Configure Docker for Artifact Registry
         run: |
           gcloud auth configure-docker asia-northeast1-docker.pkg.dev
@@ -64,8 +68,13 @@ jobs:
       - name: Create Binary Authorization Attestation
         working-directory: app/${{ env.SERVICE_NAME }}
         run: |
-          # artifacts.jsonからイメージダイジェストを取得
-          IMAGE_DIGEST=$(jq -r '.builds[0].tag' artifacts.json | cut -f 2 -d "@")
+          # artifacts.jsonからイメージタグを取得
+          IMAGE_WITH_TAG=$(jq -r '.builds[0].tag' artifacts.json)
+          echo "IMAGE_WITH_TAG: $IMAGE_WITH_TAG"
+
+          # Artifact Registryからダイジェストを取得
+          IMAGE_DIGEST=$(gcloud artifacts docker images describe "${IMAGE_WITH_TAG}" \
+            --format='get(image_summary.digest)')
           echo "IMAGE_DIGEST: $IMAGE_DIGEST"
 
           ARTIFACT_URL="${{ env.SKAFFOLD_DEFAULT_REPO }}/${{ env.SERVICE_NAME }}@${IMAGE_DIGEST}"
