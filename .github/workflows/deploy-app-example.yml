@@ -13,6 +13,14 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  PROJECT_ID: cloudrun-hands-on-473403
+  REGION: asia-northeast1
+  SERVICE_NAME: frontend
+  PIPELINE_NAME: cnsrun-frontend
+  DEPLOY_ENV: dev
+  SKAFFOLD_DEFAULT_REPO: asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/cnsrun-app
+
 jobs:
   deploy:
     name: Build and Deploy Application
@@ -21,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Git historyが必要
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -36,32 +46,61 @@ jobs:
         run: |
           gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
-      - name: Trigger Cloud Build
+      - name: Install Skaffold
         run: |
-         gcloud builds triggers run cnsrun-frontend-trigger \
-           --region=asia-northeast1 \
-           --branch=main
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v2.10.1/skaffold-linux-amd64
+          sudo install skaffold /usr/local/bin/
+          skaffold version
 
-    #   - name: Build and Push Docker Image
-    #     run: |
-    #       # 例: フロントエンドのビルド
-    #       docker build -t asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }} ./app/frontend
-    #       docker push asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+      - name: Configure Git
+        run: |
+          git config --global core.abbrev 8
 
-    #   - name: Trigger Cloud Build
-    #     run: |
-    #       gcloud builds submit --config=cloudbuild.yaml
+      - name: Build with Skaffold
+        working-directory: app/${{ env.SERVICE_NAME }}
+        run: |
+          skaffold build --file-output=artifacts.json --filename=skaffold.yaml
 
-    #   - name: Create Cloud Deploy Release
-    #     run: |
-    #       gcloud deploy releases create release-${{ github.sha }} \
-    #         --delivery-pipeline=frontend-pipeline \
-    #         --region=asia-northeast1 \
-    #         --images=frontend=asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+      - name: Create Binary Authorization Attestation
+        working-directory: app/${{ env.SERVICE_NAME }}
+        run: |
+          # artifacts.jsonからイメージダイジェストを取得
+          IMAGE_DIGEST=$(jq -r '.builds[0].tag' artifacts.json | cut -f 2 -d "@")
+          echo "IMAGE_DIGEST: $IMAGE_DIGEST"
 
-    #   - name: Display Deployment Summary
-    #     run: |
-    #       echo "Application deployed successfully!"
-    #       echo "  ✓ Image built and pushed to Artifact Registry"
-    #       echo "  ✓ Cloud Deploy release created"
-    #       echo "  ✓ Service account: github-deploy"
+          ARTIFACT_URL="${{ env.SKAFFOLD_DEFAULT_REPO }}/${{ env.SERVICE_NAME }}@${IMAGE_DIGEST}"
+          echo "ARTIFACT_URL: $ARTIFACT_URL"
+
+          # 既存のattestationをチェック
+          if gcloud beta container binauthz attestations list \
+            --project=${{ env.PROJECT_ID }} \
+            --attestor=cnsrun-attestor \
+            --attestor-project=${{ env.PROJECT_ID }} \
+            --artifact-url="${ARTIFACT_URL}" 2>/dev/null | grep -q "${IMAGE_DIGEST}"; then
+            echo "Attestationが既に存在します。スキップします。"
+          else
+            echo "Attestationを作成します"
+            gcloud beta container binauthz attestations sign-and-create \
+              --project=${{ env.PROJECT_ID }} \
+              --artifact-url="${ARTIFACT_URL}" \
+              --attestor=cnsrun-attestor \
+              --attestor-project=${{ env.PROJECT_ID }} \
+              --keyversion-project=${{ env.PROJECT_ID }} \
+              --keyversion-location=${{ env.REGION }} \
+              --keyversion-keyring=cnsrun-keyring \
+              --keyversion-key=cnsrun-attestor-key \
+              --keyversion=1
+          fi
+
+      - name: Create Cloud Deploy Release
+        working-directory: app/${{ env.SERVICE_NAME }}
+        run: |
+          RELEASE_NAME="${{ env.DEPLOY_ENV }}-$(git rev-parse --short=8 HEAD)-$(echo ${{ github.run_id }} | cut -c1-8)"
+          echo "Creating release: $RELEASE_NAME"
+
+          gcloud deploy releases create $RELEASE_NAME \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --delivery-pipeline=${{ env.PIPELINE_NAME }} \
+            --build-artifacts=artifacts.json \
+            --skaffold-file=skaffold.yaml
