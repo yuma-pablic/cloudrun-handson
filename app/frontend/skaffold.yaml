@@ -19,6 +19,15 @@ build:
 deploy:
   cloudrun: {}
 profiles:
+  - name: dev
+    activation:
+      - env: DEPLOY_ENV=dev
+    build:
+      local:
+        push: true
+        useDockerCLI: true
+        useBuildkit: true
+        concurrency: 0
   - name: main
     activation:
       - env: DEPLOY_ENV=main
@@ -28,6 +37,3 @@ profiles:
         useDockerCLI: true
         useBuildkit: true
         concurrency: 0
-    manifests:
-      rawYaml:
-        - ./cloudrun.yaml
