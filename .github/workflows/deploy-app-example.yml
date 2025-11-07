@@ -68,13 +68,18 @@ jobs:
       - name: Create Binary Authorization Attestation
         working-directory: app/${{ env.SERVICE_NAME }}
         run: |
-          # artifacts.jsonからイメージタグを取得
+          # artifacts.jsonから完全なイメージ参照を取得
           IMAGE_WITH_TAG=$(jq -r '.builds[0].tag' artifacts.json)
           echo "IMAGE_WITH_TAG: $IMAGE_WITH_TAG"
 
-          # Artifact Registryからダイジェストを取得
-          IMAGE_DIGEST=$(gcloud artifacts docker images describe "${IMAGE_WITH_TAG}" \
-            --format='get(image_summary.digest)')
+          # ダイジェストを抽出 (既にtag@digestの形式になっている場合)
+          if [[ $IMAGE_WITH_TAG == *"@sha256:"* ]]; then
+            IMAGE_DIGEST=$(echo "$IMAGE_WITH_TAG" | sed 's/.*@//')
+          else
+            # ダイジェストが含まれていない場合はArtifact Registryから取得
+            IMAGE_DIGEST=$(gcloud artifacts docker images describe "${IMAGE_WITH_TAG}" \
+              --format='get(image_summary.digest)')
+          fi
           echo "IMAGE_DIGEST: $IMAGE_DIGEST"
 
           ARTIFACT_URL="${{ env.SKAFFOLD_DEFAULT_REPO }}/${{ env.SERVICE_NAME }}@${IMAGE_DIGEST}"
