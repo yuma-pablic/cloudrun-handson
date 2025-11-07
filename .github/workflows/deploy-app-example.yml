@@ -65,46 +65,46 @@ jobs:
         run: |
           skaffold build --file-output=artifacts.json --filename=skaffold.yaml
 
-      - name: Create Binary Authorization Attestation
-        working-directory: app/${{ env.SERVICE_NAME }}
-        run: |
-          # artifacts.jsonから完全なイメージ参照を取得
-          IMAGE_WITH_TAG=$(jq -r '.builds[0].tag' artifacts.json)
-          echo "IMAGE_WITH_TAG: $IMAGE_WITH_TAG"
+    #   - name: Create Binary Authorization Attestation
+    #     working-directory: app/${{ env.SERVICE_NAME }}
+    #     run: |
+    #       # artifacts.jsonから完全なイメージ参照を取得
+    #       IMAGE_WITH_TAG=$(jq -r '.builds[0].tag' artifacts.json)
+    #       echo "IMAGE_WITH_TAG: $IMAGE_WITH_TAG"
 
-          # ダイジェストを抽出 (既にtag@digestの形式になっている場合)
-          if [[ $IMAGE_WITH_TAG == *"@sha256:"* ]]; then
-            IMAGE_DIGEST=$(echo "$IMAGE_WITH_TAG" | sed 's/.*@//')
-          else
-            # ダイジェストが含まれていない場合はArtifact Registryから取得
-            IMAGE_DIGEST=$(gcloud artifacts docker images describe "${IMAGE_WITH_TAG}" \
-              --format='get(image_summary.digest)')
-          fi
-          echo "IMAGE_DIGEST: $IMAGE_DIGEST"
+    #       # ダイジェストを抽出 (既にtag@digestの形式になっている場合)
+    #       if [[ $IMAGE_WITH_TAG == *"@sha256:"* ]]; then
+    #         IMAGE_DIGEST=$(echo "$IMAGE_WITH_TAG" | sed 's/.*@//')
+    #       else
+    #         # ダイジェストが含まれていない場合はArtifact Registryから取得
+    #         IMAGE_DIGEST=$(gcloud artifacts docker images describe "${IMAGE_WITH_TAG}" \
+    #           --format='get(image_summary.digest)')
+    #       fi
+    #       echo "IMAGE_DIGEST: $IMAGE_DIGEST"
 
-          ARTIFACT_URL="${{ env.SKAFFOLD_DEFAULT_REPO }}/${{ env.SERVICE_NAME }}@${IMAGE_DIGEST}"
-          echo "ARTIFACT_URL: $ARTIFACT_URL"
+    #       ARTIFACT_URL="${{ env.SKAFFOLD_DEFAULT_REPO }}/${{ env.SERVICE_NAME }}@${IMAGE_DIGEST}"
+    #       echo "ARTIFACT_URL: $ARTIFACT_URL"
 
-          # 既存のattestationをチェック
-          if gcloud beta container binauthz attestations list \
-            --project=${{ env.PROJECT_ID }} \
-            --attestor=cnsrun-attestor \
-            --attestor-project=${{ env.PROJECT_ID }} \
-            --artifact-url="${ARTIFACT_URL}" 2>/dev/null | grep -q "${IMAGE_DIGEST}"; then
-            echo "Attestationが既に存在します。スキップします。"
-          else
-            echo "Attestationを作成します"
-            gcloud beta container binauthz attestations sign-and-create \
-              --project=${{ env.PROJECT_ID }} \
-              --artifact-url="${ARTIFACT_URL}" \
-              --attestor=cnsrun-attestor \
-              --attestor-project=${{ env.PROJECT_ID }} \
-              --keyversion-project=${{ env.PROJECT_ID }} \
-              --keyversion-location=${{ env.REGION }} \
-              --keyversion-keyring=cnsrun-keyring \
-              --keyversion-key=cnsrun-attestor-key \
-              --keyversion=1
-          fi
+    #       # 既存のattestationをチェック
+    #       if gcloud beta container binauthz attestations list \
+    #         --project=${{ env.PROJECT_ID }} \
+    #         --attestor=cnsrun-attestor \
+    #         --attestor-project=${{ env.PROJECT_ID }} \
+    #         --artifact-url="${ARTIFACT_URL}" 2>/dev/null | grep -q "${IMAGE_DIGEST}"; then
+    #         echo "Attestationが既に存在します。スキップします。"
+    #       else
+    #         echo "Attestationを作成します"
+    #         gcloud beta container binauthz attestations sign-and-create \
+    #           --project=${{ env.PROJECT_ID }} \
+    #           --artifact-url="${ARTIFACT_URL}" \
+    #           --attestor=cnsrun-attestor \
+    #           --attestor-project=${{ env.PROJECT_ID }} \
+    #           --keyversion-project=${{ env.PROJECT_ID }} \
+    #           --keyversion-location=${{ env.REGION }} \
+    #           --keyversion-keyring=cnsrun-keyring \
+    #           --keyversion-key=cnsrun-attestor-key \
+    #           --keyversion=1
+    #       fi
 
       - name: Create Cloud Deploy Release
         working-directory: app/${{ env.SERVICE_NAME }}
