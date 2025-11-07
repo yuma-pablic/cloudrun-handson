@@ -36,26 +36,32 @@ jobs:
         run: |
           gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
-      - name: Build and Push Docker Image
-        run: |
-          # 例: フロントエンドのビルド
-          docker build -t asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }} ./app/frontend
-          docker push asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
-
       - name: Trigger Cloud Build
         run: |
-          gcloud builds submit --config=cloudbuild.yaml
+         gcloud builds triggers run cnsrun-frontend-trigger \
+           --region=asia-northeast1 \
+           --branch=main
 
-      - name: Create Cloud Deploy Release
-        run: |
-          gcloud deploy releases create release-${{ github.sha }} \
-            --delivery-pipeline=frontend-pipeline \
-            --region=asia-northeast1 \
-            --images=frontend=asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+    #   - name: Build and Push Docker Image
+    #     run: |
+    #       # 例: フロントエンドのビルド
+    #       docker build -t asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }} ./app/frontend
+    #       docker push asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
 
-      - name: Display Deployment Summary
-        run: |
-          echo "Application deployed successfully!"
-          echo "  ✓ Image built and pushed to Artifact Registry"
-          echo "  ✓ Cloud Deploy release created"
-          echo "  ✓ Service account: github-deploy"
+    #   - name: Trigger Cloud Build
+    #     run: |
+    #       gcloud builds submit --config=cloudbuild.yaml
+
+    #   - name: Create Cloud Deploy Release
+    #     run: |
+    #       gcloud deploy releases create release-${{ github.sha }} \
+    #         --delivery-pipeline=frontend-pipeline \
+    #         --region=asia-northeast1 \
+    #         --images=frontend=asia-northeast1-docker.pkg.dev/cloudrun-hands-on-473403/dev-cnsrun-app/frontend:${{ github.sha }}
+
+    #   - name: Display Deployment Summary
+    #     run: |
+    #       echo "Application deployed successfully!"
+    #       echo "  ✓ Image built and pushed to Artifact Registry"
+    #       echo "  ✓ Cloud Deploy release created"
+    #       echo "  ✓ Service account: github-deploy"
